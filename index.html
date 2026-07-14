@@ -469,10 +469,10 @@
   async function ensureMeSpeak(){
     if(meSpeakReady) return;
     setStatus('Voice engine load ho raha hai...');
-    await loadScript('https://cdn.jsdelivr.net/npm/mespeak@2.0.7/mespeak.js');
+    await loadScript('https://cdn.jsdelivr.net/npm/mespeak@2.0.2/mespeak.js');
     await new Promise((res,rej)=>{
-      window.meSpeak.loadConfig('https://cdn.jsdelivr.net/npm/mespeak@2.0.7/mespeak_config.json');
-      window.meSpeak.loadVoice('https://cdn.jsdelivr.net/npm/mespeak@2.0.7/voices/en/en-us.json', (ok)=>{
+      window.meSpeak.loadConfig('https://cdn.jsdelivr.net/npm/mespeak@2.0.2/mespeak_config.json');
+      window.meSpeak.loadVoice('https://cdn.jsdelivr.net/npm/mespeak@2.0.2/voices/en/en-us.json', (ok)=>{
         if(ok) res(); else rej(new Error('Voice load failed'));
       });
     });
