@@ -519,10 +519,12 @@
     if(!rawArray){ setStatus('Awaaz generate nahi ho payi. Script chota karke try karo.','warn'); return false; }
 
     const uint8 = new Uint8Array(rawArray);
-    const ac = getAudioCtx();
-    let buf;
-    try{
-      buf = await ac.decodeAudioData(uint8.buffer.slice(0));
+	const ac = getAudioCtx();
+	let buf;
+	try{
+	// slice(0) hata kar direct buffer pass karein
+	buf = await ac.decodeAudioData(uint8.buffer); 
+	}
     }catch(e){
       setStatus('Audio decode error: '+e.message,'warn');
       return false;
