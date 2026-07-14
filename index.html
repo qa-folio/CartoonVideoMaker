@@ -469,10 +469,13 @@
   async function ensureMeSpeak(){
     if(meSpeakReady) return;
     setStatus('Voice engine load ho raha hai...');
-    await loadScript('https://cdn.jsdelivr.net/npm/mespeak@2.0.2/mespeak.js');
+    await loadScript(new URL('vendor/mespeak/ESpeak.js', location.href).href);
+    if(typeof window.meSpeak === 'undefined'){
+      throw new Error('meSpeak script loaded but window.meSpeak is not defined. Check vendor/mespeak/ESpeak.js was uploaded correctly.');
+    }
     await new Promise((res,rej)=>{
-      window.meSpeak.loadConfig('https://cdn.jsdelivr.net/npm/mespeak@2.0.2/mespeak_config.json');
-      window.meSpeak.loadVoice('https://cdn.jsdelivr.net/npm/mespeak@2.0.2/voices/en/en-us.json', (ok)=>{
+      window.meSpeak.loadConfig(new URL('vendor/mespeak/mespeak_config.json', location.href).href);
+      window.meSpeak.loadVoice(new URL('vendor/mespeak/voices/en/en-us.json', location.href).href, (ok)=>{
         if(ok) res(); else rej(new Error('Voice load failed'));
       });
     });
