@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Toon Voice Studio — Script to Cartoon Video</title>
+<style>
+  :root{
+    --ink:#1b1330;
+    --paper:#12101c;
+    --panel:#1c1830;
+    --panel2:#232043;
+    --accent:#ff5d73;
+    --accent2:#ffd166;
+    --accent3:#5ce1e6;
+    --text:#f2eefc;
+    --sub:#a79ecb;
+    --line:#332a55;
+    --ok:#5ce1a0;
+    --warn:#ffb454;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    background:radial-gradient(1200px 800px at 20% -10%, #241c40 0%, var(--paper) 55%);
+    color:var(--text); min-height:100vh;
+  }
+  header{
+    padding:18px 20px 10px; text-align:center;
+  }
+  header h1{
+    margin:0; font-size:22px; letter-spacing:.5px;
+    background:linear-gradient(90deg,var(--accent),var(--accent2));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    font-weight:800;
+  }
+  header p{margin:6px 0 0; color:var(--sub); font-size:12.5px;}
+  .wrap{
+    max-width:1100px; margin:0 auto; padding:10px 14px 60px;
+    display:grid; grid-template-columns: 1fr; gap:16px;
+  }
+  @media(min-width:900px){
+    .wrap{grid-template-columns: 360px 1fr;}
+  }
+  .card{
+    background:linear-gradient(180deg,var(--panel),var(--panel2));
+    border:1px solid var(--line); border-radius:16px; padding:14px;
+  }
+  .card + .card{margin-top:14px;}
+  label{display:block; font-size:12px; color:var(--sub); margin:10px 0 5px; text-transform:uppercase; letter-spacing:.6px;}
+  textarea{
+    width:100%; min-height:110px; resize:vertical; background:#0e0c18; color:var(--text);
+    border:1px solid var(--line); border-radius:10px; padding:10px; font-size:14px; line-height:1.4;
+  }
+  select, input[type=range]{width:100%;}
+  select{
+    background:#0e0c18; color:var(--text); border:1px solid var(--line); border-radius:10px;
+    padding:9px 10px; font-size:14px;
+  }
+  .row2{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  .chip-group{display:flex; gap:8px; flex-wrap:wrap;}
+  .chip{
+    flex:1 1 auto; text-align:center; padding:9px 10px; border-radius:10px; border:1px solid var(--line);
+    background:#0e0c18; color:var(--sub); font-size:13px; cursor:pointer; user-select:none; min-width:70px;
+  }
+  .chip.active{background:linear-gradient(90deg,var(--accent),#ff8a63); color:#1b1330; border-color:transparent; font-weight:700;}
+  .slider-label{display:flex; justify-content:space-between; font-size:12px; color:var(--sub); margin:10px 0 3px; text-transform:uppercase; letter-spacing:.6px;}
+  .btn{
+    width:100%; padding:13px; border-radius:12px; border:none; font-size:15px; font-weight:700;
+    cursor:pointer; margin-top:12px; transition:transform .1s ease;
+  }
+  .btn:active{transform:scale(.98);}
+  .btn-primary{background:linear-gradient(90deg,var(--accent3),#7ee8ff); color:#0b2e33;}
+  .btn-gold{background:linear-gradient(90deg,var(--accent2),#ffb454); color:#3a2400;}
+  .btn:disabled{opacity:.45; cursor:not-allowed;}
+  .stage{
+    background:#050508; border:1px solid var(--line); border-radius:16px; padding:14px;
+    display:flex; flex-direction:column; align-items:center; gap:10px;
+  }
+  .canvas-holder{
+    width:100%; display:flex; justify-content:center; background:#000; border-radius:10px; overflow:hidden;
+    max-height:70vh;
+  }
+  canvas{max-width:100%; max-height:70vh; display:block;}
+  .status{
+    width:100%; font-size:12.5px; color:var(--sub); background:#0e0c18; border:1px solid var(--line);
+    border-radius:10px; padding:10px 12px; min-height:18px;
+  }
+  .status.ok{color:var(--ok);}
+  .status.warn{color:var(--warn);}
+  .progress{
+    width:100%; height:8px; border-radius:5px; background:#0e0c18; overflow:hidden; border:1px solid var(--line);
+  }
+  .progress-bar{height:100%; width:0%; background:linear-gradient(90deg,var(--accent),var(--accent2)); transition:width .15s ease;}
+  .note{font-size:11.5px; color:var(--sub); line-height:1.5; margin-top:8px;}
+  .badge{display:inline-block; font-size:10.5px; padding:2px 7px; border-radius:6px; margin-left:6px; vertical-align:1px;}
+  .badge.exp{background:#3a2400; color:var(--warn);}
+  a.dl{
+    display:block; text-align:center; width:100%; padding:13px; border-radius:12px; margin-top:10px;
+    background:linear-gradient(90deg,#5ce1a0,#38b98a); color:#04241a; font-weight:800; text-decoration:none;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🎬 Toon Voice Studio</h1>
+  <p>Script paste karo → 2D cartoon character bolega, aapki awaaz style mein. Sab kuch browser ke andar, free.</p>
+</header>
+
+<div class="wrap">
+
+  <!-- LEFT: CONTROLS -->
+  <div>
+    <div class="card">
+      <label>1. Apna Script</label>
+      <textarea id="script" placeholder="Yahan apna script likho ya paste karo... e.g. Namaste doston, aaj hum baat karenge...">Namaste doston! Welcome to my channel. Aaj hum ek naya topic discuss karenge.</textarea>
+      <div class="note">Tip: English ya Hinglish (Roman script) text sabse achha bolega. Devanagari (हिंदी) text ka pronunciation weak/robotic ho sakta hai — best hoga Hinglish likhna.</div>
+
+      <label>2. Character</label>
+      <div class="chip-group" id="charChips">
+        <div class="chip active" data-val="boy">Boy</div>
+        <div class="chip" data-val="girl">Girl</div>
+        <div class="chip" data-val="robot">Robot</div>
+        <div class="chip" data-val="cat">Cat</div>
+      </div>
+
+      <label>3. Background</label>
+      <div class="chip-group" id="bgChips">
+        <div class="chip active" data-val="room">Room</div>
+        <div class="chip" data-val="park">Park</div>
+        <div class="chip" data-val="office">Office</div>
+        <div class="chip" data-val="sky">Sky</div>
+      </div>
+
+      <label>4. Aspect Ratio</label>
+      <div class="chip-group" id="ratioChips">
+        <div class="chip active" data-val="9:16">9:16 (Reels/Shorts)</div>
+        <div class="chip" data-val="16:9">16:9 (YouTube)</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <label>5. Voice</label>
+      <div class="row2">
+        <select id="voiceGender">
+          <option value="m3">Male</option>
+          <option value="f3">Female</option>
+        </select>
+        <select id="voiceLang">
+          <option value="en">English accent</option>
+        </select>
+      </div>
+      <div class="slider-label"><span>Pitch</span><span id="pitchVal">50</span></div>
+      <input type="range" id="pitch" min="0" max="99" value="50">
+      <div class="slider-label"><span>Speed (words/min)</span><span id="speedVal">160</span></div>
+      <input type="range" id="speed" min="100" max="250" value="160">
+
+      <label>6. Export Resolution</label>
+      <select id="resSelect">
+        <option value="720">720p (fast, safest on mobile)</option>
+        <option value="1080" selected>1080p Full HD</option>
+        <option value="2160">4K (upscaled, slower)</option>
+        <option value="4320">8K (experimental — very slow, may crash on phones)</option>
+      </select>
+
+      <button class="btn btn-primary" id="previewBtn">▶ Generate &amp; Preview Voice</button>
+      <button class="btn btn-gold" id="recordBtn" disabled>⬇ Record &amp; Download Video</button>
+      <div class="note">Preview browser ki free TTS engine (meSpeak / eSpeak) use karta hai — awaaz thoda robotic hogi, lekin 100% free aur offline-capable hai.</div>
+    </div>
+  </div>
+
+  <!-- RIGHT: STAGE -->
+  <div class="stage">
+    <div class="canvas-holder">
+      <canvas id="stage" width="720" height="1280"></canvas>
+    </div>
+    <div class="progress"><div class="progress-bar" id="progBar"></div></div>
+    <div class="status" id="statusBox">Ready. Script likho aur "Generate & Preview" dabao.</div>
+    <div id="dlArea"></div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------- STATE ----------
+  const state = {
+    character: 'boy',
+    background: 'room',
+    ratio: '9:16',
+    audioBuffer: null,
+    envelope: null,       // Float32Array amplitude 0..1 sampled at ENV_RATE per second
+    envRate: 60,          // samples per second for envelope
+    duration: 0,
+    ready: false
+  };
+  const ENV_RATE = 60;
+
+  const canvas = document.getElementById('stage');
+  const ctx = canvas.getContext('2d');
+  const statusBox = document.getElementById('statusBox');
+  const progBar = document.getElementById('progBar');
+  const dlArea = document.getElementById('dlArea');
+  const previewBtn = document.getElementById('previewBtn');
+  const recordBtn = document.getElementById('recordBtn');
+
+  function setStatus(msg, cls){
+    statusBox.textContent = msg;
+    statusBox.className = 'status' + (cls ? ' '+cls : '');
+  }
+  function setProgress(pct){ progBar.style.width = Math.max(0,Math.min(100,pct))+'%'; }
+
+  // ---------- CHIP SELECTORS ----------
+  function wireChips(id, key){
+    const group = document.getElementById(id);
+    group.querySelectorAll('.chip').forEach(chip=>{
+      chip.addEventListener('click', ()=>{
+        group.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+        chip.classList.add('active');
+        state[key] = chip.dataset.val;
+        if(key === 'ratio') resizeCanvas();
+        drawStaticFrame();
+      });
+    });
+  }
+  wireChips('charChips','character');
+  wireChips('bgChips','background');
+  wireChips('ratioChips','ratio');
+
+  document.getElementById('pitch').addEventListener('input', e=>{
+    document.getElementById('pitchVal').textContent = e.target.value;
+  });
+  document.getElementById('speed').addEventListener('input', e=>{
+    document.getElementById('speedVal').textContent = e.target.value;
+  });
+
+  // working (preview) resolution — kept modest for smooth real-time drawing
+  function resizeCanvas(){
+    if(state.ratio === '9:16'){ canvas.width = 720; canvas.height = 1280; }
+    else { canvas.width = 1280; canvas.height = 720; }
+  }
+  resizeCanvas();
+
+  // ---------- BACKGROUND DRAWING ----------
+  function drawBackground(){
+    const w = canvas.width, h = canvas.height;
+    if(state.background === 'room'){
+      const g = ctx.createLinearGradient(0,0,0,h);
+      g.addColorStop(0,'#7d6bb0'); g.addColorStop(1,'#5a4a8a');
+      ctx.fillStyle=g; ctx.fillRect(0,0,w,h*0.72);
+      ctx.fillStyle='#3c3160'; ctx.fillRect(0,h*0.72,w,h*0.28);
+      // window
+      ctx.fillStyle='#bfe8ff'; ctx.fillRect(w*0.62,h*0.08,w*0.28,h*0.22);
+      ctx.strokeStyle='#2a2148'; ctx.lineWidth=6;
+      ctx.strokeRect(w*0.62,h*0.08,w*0.28,h*0.22);
+      ctx.beginPath(); ctx.moveTo(w*0.62+w*0.14,h*0.08); ctx.lineTo(w*0.62+w*0.14,h*0.3); ctx.stroke();
+      // frame picture
+      ctx.fillStyle='#ffd166'; ctx.fillRect(w*0.08,h*0.1,w*0.18,h*0.14);
+      ctx.strokeStyle='#2a2148'; ctx.strokeRect(w*0.08,h*0.1,w*0.18,h*0.14);
+    } else if(state.background === 'park'){
+      const g = ctx.createLinearGradient(0,0,0,h*0.62);
+      g.addColorStop(0,'#8ed1ff'); g.addColorStop(1,'#d9f3ff');
+      ctx.fillStyle=g; ctx.fillRect(0,0,w,h*0.62);
+      ctx.fillStyle='#ffe27a'; ctx.beginPath(); ctx.arc(w*0.8,h*0.14,w*0.08,0,7); ctx.fill();
+      ctx.fillStyle='#fff'; [ [0.2,0.14,0.07],[0.32,0.11,0.05],[0.44,0.15,0.06] ].forEach(c=>{
+        ctx.beginPath(); ctx.ellipse(w*c[0],h*c[1],w*c[2],w*c[2]*0.6,0,0,7); ctx.fill();
+      });
+      ctx.fillStyle='#5cb85c'; ctx.fillRect(0,h*0.6,w,h*0.4);
+      ctx.fillStyle='#3f8f3f'; ctx.beginPath(); ctx.ellipse(w*0.15,h*0.6,w*0.02,h*0.02,0,0,7); ctx.fill();
+      // tree
+      ctx.fillStyle='#7a4a2b'; ctx.fillRect(w*0.85,h*0.42,w*0.03,h*0.2);
+      ctx.fillStyle='#3f8f3f'; ctx.beginPath(); ctx.arc(w*0.865,h*0.38,w*0.11,0,7); ctx.fill();
+    } else if(state.background === 'office'){
+      ctx.fillStyle='#cbd6e6'; ctx.fillRect(0,0,w,h*0.65);
+      ctx.fillStyle='#9fb0c9'; ctx.fillRect(w*0.55,h*0.06,w*0.35,h*0.3);
+      ctx.strokeStyle='#5a6b85'; ctx.lineWidth=5; ctx.strokeRect(w*0.55,h*0.06,w*0.35,h*0.3);
+      ctx.fillStyle='#8a6a4a'; ctx.fillRect(0,h*0.62,w,h*0.38);
+      ctx.fillStyle='#5a4230'; ctx.fillRect(w*0.05,h*0.63,w*0.9,h*0.05);
+      // plant
+      ctx.fillStyle='#946b46'; ctx.fillRect(w*0.08,h*0.5,w*0.06,h*0.12);
+      ctx.fillStyle='#3f8f3f'; ctx.beginPath(); ctx.arc(w*0.11,h*0.46,w*0.08,0,7); ctx.fill();
+    } else { // sky
+      const g = ctx.createLinearGradient(0,0,0,h);
+      g.addColorStop(0,'#3e5fce'); g.addColorStop(1,'#9db9ff');
+      ctx.fillStyle=g; ctx.fillRect(0,0,w,h);
+      ctx.fillStyle='rgba(255,255,255,0.85)';
+      [[0.2,0.2,0.09],[0.5,0.15,0.07],[0.75,0.25,0.1]].forEach(c=>{
+        ctx.beginPath(); ctx.ellipse(w*c[0],h*c[1],w*c[2],w*c[2]*0.55,0,0,7); ctx.fill();
+      });
+    }
+  }
+
+  // ---------- CHARACTER DRAWING ----------
+  // mouthOpen: 0 (closed) .. 1 (fully open)   blink: 0..1 (1 = fully closed eyes)
+  function drawCharacter(mouthOpen, blink){
+    const w = canvas.width, h = canvas.height;
+    const cx = w/2, cy = h*0.56;
+    const headR = Math.min(w,h)*0.16;
+
+    ctx.save();
+    ctx.translate(cx,cy);
+
+    if(state.character === 'robot'){
+      drawRobot(headR, mouthOpen, blink);
+    } else if(state.character === 'cat'){
+      drawCat(headR, mouthOpen, blink);
+    } else {
+      drawHuman(headR, mouthOpen, blink, state.character === 'girl');
+    }
+    ctx.restore();
+  }
+
+  function drawHuman(R, mouthOpen, blink, isGirl){
+    // body
+    ctx.fillStyle = isGirl ? '#e05d8a' : '#3a7bd5';
+    roundRect(-R*0.9, R*0.65, R*1.8, R*1.6, 24); ctx.fill();
+    // neck
+    ctx.fillStyle = '#f2c49b';
+    ctx.fillRect(-R*0.18, R*0.55, R*0.36, R*0.25);
+    // head
+    ctx.fillStyle = '#f2c49b';
+    ctx.beginPath(); ctx.arc(0,0,R,0,7); ctx.fill();
+    // hair
+    ctx.fillStyle = isGirl ? '#4a2a1a' : '#2a1c12';
+    if(isGirl){
+      ctx.beginPath(); ctx.arc(0,-R*0.15,R*1.02,Math.PI*1.02,Math.PI*1.98); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(-R*1.05,R*0.35,R*0.22,R*0.4,0,0,7); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(R*1.05,R*0.35,R*0.22,R*0.4,0,0,7); ctx.fill();
+    } else {
+      ctx.beginPath(); ctx.arc(0,-R*0.2,R*1.02,Math.PI*1.05,Math.PI*1.95); ctx.fill();
+    }
+    // ears
+    ctx.fillStyle = '#f2c49b';
+    ctx.beginPath(); ctx.ellipse(-R*1.0,0,R*0.12,R*0.18,0,0,7); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(R*1.0,0,R*0.12,R*0.18,0,0,7); ctx.fill();
+    // eyes
+    drawEye(-R*0.38,-R*0.05,R*0.16,blink);
+    drawEye(R*0.38,-R*0.05,R*0.16,blink);
+    // eyebrows
+    ctx.strokeStyle='#2a1c12'; ctx.lineWidth=R*0.045; ctx.lineCap='round';
+    ctx.beginPath(); ctx.moveTo(-R*0.55,-R*0.32); ctx.lineTo(-R*0.2,-R*0.36); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(R*0.2,-R*0.36); ctx.lineTo(R*0.55,-R*0.32); ctx.stroke();
+    // cheeks
+    ctx.fillStyle='rgba(255,120,140,0.35)';
+    ctx.beginPath(); ctx.ellipse(-R*0.55,R*0.28,R*0.14,R*0.09,0,0,7); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(R*0.55,R*0.28,R*0.14,R*0.09,0,0,7); ctx.fill();
+    // mouth
+    drawMouth(0, R*0.42, R*0.5, mouthOpen, '#7a2e2e');
+  }
+
+  function drawRobot(R, mouthOpen, blink){
+    ctx.fillStyle = '#8a94a6';
+    roundRect(-R*0.9, R*0.65, R*1.8, R*1.6, 18); ctx.fill();
+    ctx.fillStyle = '#c7cedb';
+    roundRect(-R, -R*0.9, R*2, R*1.9, 26); ctx.fill();
+    // antenna
+    ctx.strokeStyle='#8a94a6'; ctx.lineWidth=R*0.08;
+    ctx.beginPath(); ctx.moveTo(0,-R*0.9); ctx.lineTo(0,-R*1.3); ctx.stroke();
+    ctx.fillStyle = '#ff5d73'; ctx.beginPath(); ctx.arc(0,-R*1.32,R*0.1,0,7); ctx.fill();
+    // eye panel
+    ctx.fillStyle='#232043'; roundRect(-R*0.62,-R*0.35,R*1.24,R*0.4,10); ctx.fill();
+    const eyeH = R*0.16*(1-blink*0.85)+R*0.02;
+    ctx.fillStyle='#5ce1e6';
+    ctx.beginPath(); ctx.ellipse(-R*0.3,-R*0.15,R*0.14,eyeH,0,0,7); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(R*0.3,-R*0.15,R*0.14,eyeH,0,0,7); ctx.fill();
+    // mouth: LED bar segments
+    const segCount = 6;
+    const litSegs = Math.round(mouthOpen*segCount);
+    const barW = R*1.1, segW = barW/segCount - 4;
+    ctx.fillStyle='#232043'; roundRect(-barW/2,R*0.25,barW,R*0.28,8); ctx.fill();
+    for(let i=0;i<segCount;i++){
+      ctx.fillStyle = i<litSegs ? '#ffd166' : '#3a3560';
+      const x = -barW/2 + 4 + i*(barW/segCount);
+      ctx.fillRect(x, R*0.29, segW, R*0.2);
+    }
+  }
+
+  function drawCat(R, mouthOpen, blink){
+    ctx.fillStyle = '#e8a24a';
+    roundRect(-R*0.9, R*0.65, R*1.8, R*1.5, 22); ctx.fill();
+    // ears
+    ctx.fillStyle = '#e8a24a';
+    ctx.beginPath(); ctx.moveTo(-R*0.85,-R*0.55); ctx.lineTo(-R*1.15,-R*1.3); ctx.lineTo(-R*0.35,-R*0.95); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(R*0.85,-R*0.55); ctx.lineTo(R*1.15,-R*1.3); ctx.lineTo(R*0.35,-R*0.95); ctx.closePath(); ctx.fill();
+    ctx.fillStyle='#f6c88a';
+    ctx.beginPath(); ctx.moveTo(-R*0.78,-R*0.65); ctx.lineTo(-R*0.98,-R*1.12); ctx.lineTo(-R*0.5,-R*0.9); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(R*0.78,-R*0.65); ctx.lineTo(R*0.98,-R*1.12); ctx.lineTo(R*0.5,-R*0.9); ctx.closePath(); ctx.fill();
+    // head
+    ctx.fillStyle = '#e8a24a';
+    ctx.beginPath(); ctx.arc(0,0,R,0,7); ctx.fill();
+    // face patch
+    ctx.fillStyle='#fbe0b8';
+    ctx.beginPath(); ctx.ellipse(0,R*0.18,R*0.62,R*0.5,0,0,7); ctx.fill();
+    // eyes
+    drawEye(-R*0.34,-R*0.05,R*0.15,blink);
+    drawEye(R*0.34,-R*0.05,R*0.15,blink);
+    // whiskers
+    ctx.strokeStyle='#b97a2a'; ctx.lineWidth=2;
+    [-1,1].forEach(side=>{
+      for(let i=0;i<3;i++){
+        ctx.beginPath();
+        ctx.moveTo(side*R*0.5, R*0.32+i*8-8);
+        ctx.lineTo(side*R*1.15, R*0.24+i*10-10);
+        ctx.stroke();
+      }
+    });
+    // nose + mouth
+    ctx.fillStyle='#c9678a'; ctx.beginPath(); ctx.moveTo(-R*0.06,R*0.3); ctx.lineTo(R*0.06,R*0.3); ctx.lineTo(0,R*0.38); ctx.closePath(); ctx.fill();
+    drawMouth(0, R*0.42, R*0.4, mouthOpen, '#7a3a1a');
+  }
+
+  function drawEye(x,y,r,blink){
+    const h = r*(1-blink*0.9)+r*0.06;
+    ctx.fillStyle='#fff';
+    ctx.beginPath(); ctx.ellipse(x,y,r,h,0,0,7); ctx.fill();
+    if(blink < 0.7){
+      ctx.fillStyle='#241a30';
+      ctx.beginPath(); ctx.ellipse(x,y+h*0.1,r*0.45,h*0.55,0,0,7); ctx.fill();
+    }
+  }
+
+  function drawMouth(x,y,width,openAmt,color){
+    const h = width*0.15 + width*0.55*openAmt;
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(x-width/2, y);
+    ctx.quadraticCurveTo(x, y+h, x+width/2, y);
+    ctx.quadraticCurveTo(x, y+h*0.35, x-width/2, y);
+    ctx.closePath();
+    ctx.fill();
+    if(openAmt>0.15){
+      ctx.fillStyle='#fff';
+      ctx.beginPath();
+      ctx.ellipse(x, y+h*0.15, width*0.32, h*0.18, 0,0,7);
+      ctx.fill();
+    }
+  }
+
+  function roundRect(x,y,w,h,r){
+    ctx.beginPath();
+    ctx.moveTo(x+r,y);
+    ctx.arcTo(x+w,y,x+w,y+h,r);
+    ctx.arcTo(x+w,y+h,x,y+h,r);
+    ctx.arcTo(x,y+h,x,y,r);
+    ctx.arcTo(x,y,x+w,y,r);
+    ctx.closePath();
+  }
+
+  let blinkTimer = 0, nextBlink = 2+Math.random()*3;
+  function drawStaticFrame(){
+    drawBackground();
+    drawCharacter(0, 0);
+  }
+  drawStaticFrame();
+
+  // ---------- meSpeak (free offline TTS) ----------
+  let meSpeakReady = false;
+  function loadScript(src){
+    return new Promise((res,rej)=>{
+      const s = document.createElement('script');
+      s.src = src; s.onload = ()=>res(); s.onerror = ()=>rej(new Error('Failed to load '+src));
+      document.head.appendChild(s);
+    });
+  }
+
+  async function ensureMeSpeak(){
+    if(meSpeakReady) return;
+    setStatus('Voice engine load ho raha hai...');
+    await loadScript('https://cdn.jsdelivr.net/npm/mespeak@2.0.7/mespeak.js');
+    await new Promise((res,rej)=>{
+      window.meSpeak.loadConfig('https://cdn.jsdelivr.net/npm/mespeak@2.0.7/mespeak_config.json');
+      window.meSpeak.loadVoice('https://cdn.jsdelivr.net/npm/mespeak@2.0.7/voices/en/en-us.json', (ok)=>{
+        if(ok) res(); else rej(new Error('Voice load failed'));
+      });
+    });
+    meSpeakReady = true;
+  }
+
+  let audioCtx = null;
+  function getAudioCtx(){
+    if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+    return audioCtx;
+  }
+
+  async function generateSpeech(){
+    const text = document.getElementById('script').value.trim();
+    if(!text){ setStatus('Pehle script likho.','warn'); return false; }
+    try{
+      await ensureMeSpeak();
+    }catch(e){
+      setStatus('Voice engine load nahi hua — internet check karo. ('+e.message+')','warn');
+      return false;
+    }
+    setStatus('Awaaz generate ho rahi hai...');
+    const gender = document.getElementById('voiceGender').value;
+    const pitch = document.getElementById('pitch').value;
+    const speed = document.getElementById('speed').value;
+
+    let rawArray;
+    try{
+      rawArray = window.meSpeak.speak(text, {
+        rawdata: 'array',
+        voice: 'en/en-us',
+        variant: gender,
+        pitch: pitch,
+        speed: speed,
+        wordgap: 1
+      });
+    }catch(e){
+      setStatus('Speech generation error: '+e.message,'warn');
+      return false;
+    }
+    if(!rawArray){ setStatus('Awaaz generate nahi ho payi. Script chota karke try karo.','warn'); return false; }
+
+    const uint8 = new Uint8Array(rawArray);
+    const ac = getAudioCtx();
+    let buf;
+    try{
+      buf = await ac.decodeAudioData(uint8.buffer.slice(0));
+    }catch(e){
+      setStatus('Audio decode error: '+e.message,'warn');
+      return false;
+    }
+    state.audioBuffer = buf;
+    state.duration = buf.duration;
+    buildEnvelope(buf);
+    state.ready = true;
+    recordBtn.disabled = false;
+    setStatus('Ready! Duration: '+buf.duration.toFixed(1)+'s. Preview chal raha hai...','ok');
+    return true;
+  }
+
+  function buildEnvelope(buf){
+    const ch = buf.getChannelData(0);
+    const totalSamples = Math.ceil(buf.duration*ENV_RATE);
+    const env = new Float32Array(totalSamples);
+    const samplesPerBucket = Math.max(1, Math.floor(ch.length/totalSamples));
+    let maxRms = 0.0001;
+    for(let i=0;i<totalSamples;i++){
+      let sum=0;
+      const start = i*samplesPerBucket;
+      const end = Math.min(ch.length, start+samplesPerBucket);
+      for(let j=start;j<end;j++){ sum += ch[j]*ch[j]; }
+      const rms = Math.sqrt(sum/Math.max(1,end-start));
+      env[i]=rms;
+      if(rms>maxRms) maxRms=rms;
+    }
+    for(let i=0;i<totalSamples;i++){
+      env[i] = Math.min(1, (env[i]/maxRms) * 1.3);
+    }
+    state.envelope = env;
+  }
+
+  function mouthAt(t){
+    if(!state.envelope) return 0;
+    const idx = Math.floor(t*ENV_RATE);
+    if(idx<0 || idx>=state.envelope.length) return 0;
+    const v = state.envelope[idx];
+    return v < 0.06 ? 0 : v;
+  }
+
+  // ---------- live animation loop (preview) ----------
+  let animHandle = null;
+  function animateFrame(getTime, onDone){
+    function loop(){
+      const t = getTime();
+      if(t >= state.duration){
+        drawBackground(); drawCharacter(0,0);
+        onDone && onDone();
+        return;
+      }
+      blinkTimer += 1/60;
+      let blink = 0;
+      if(blinkTimer > nextBlink){
+        const phase = blinkTimer - nextBlink;
+        if(phase < 0.12){ blink = phase/0.12; }
+        else if(phase < 0.22){ blink = 1-((phase-0.12)/0.1); }
+        else { blinkTimer = 0; nextBlink = 2+Math.random()*3; }
+      }
+      drawBackground();
+      drawCharacter(mouthAt(t), Math.max(0,Math.min(1,blink)));
+      animHandle = requestAnimationFrame(loop);
+    }
+    loop();
+  }
+
+  previewBtn.addEventListener('click', async ()=>{
+    previewBtn.disabled = true;
+    const ok = await generateSpeech();
+    previewBtn.disabled = false;
+    if(!ok) return;
+
+    const ac = getAudioCtx();
+    if(ac.state === 'suspended') await ac.resume();
+    const src = ac.createBufferSource();
+    src.buffer = state.audioBuffer;
+    src.connect(ac.destination);
+    const startTime = ac.currentTime;
+    src.start();
+    if(animHandle) cancelAnimationFrame(animHandle);
+    animateFrame(()=> ac.currentTime-startTime, ()=>setStatus('Preview khatam. Ab "Record & Download" dabao.','ok'));
+  });
+
+  // ---------- FFmpeg (for final mp4 export) ----------
+  let ffmpeg = null, ffmpegLoaded = false;
+  async function ensureFFmpeg(){
+    if(ffmpegLoaded) return;
+    setStatus('Video engine (ffmpeg) load ho raha hai...');
+    await loadScript('https://unpkg.com/@ffmpeg/ffmpeg@0.12.6/dist/umd/ffmpeg.js');
+    await loadScript('https://unpkg.com/@ffmpeg/util@0.12.1/dist/umd/index.js');
+    const { FFmpeg } = window.FFmpegWASM;
+    const { toBlobURL } = window.FFmpegUtil;
+    ffmpeg = new FFmpeg();
+    ffmpeg.on('progress', ({progress})=>{
+      setProgress(60 + progress*35);
+    });
+    const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
+    await ffmpeg.load({
+      coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+      wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+    });
+    ffmpegLoaded = true;
+  }
+
+  function targetDims(){
+    const res = parseInt(document.getElementById('resSelect').value,10);
+    const map = {
+      '9:16': {720:[720,1280],1080:[1080,1920],2160:[2160,3840],4320:[4320,7680]},
+      '16:9': {720:[1280,720],1080:[1920,1080],2160:[3840,2160],4320:[7680,4320]}
+    };
+    return map[state.ratio][res];
+  }
+
+  recordBtn.addEventListener('click', async ()=>{
+    if(!state.ready){ setStatus('Pehle "Generate & Preview" dabao.','warn'); return; }
+    recordBtn.disabled = true; previewBtn.disabled = true;
+    dlArea.innerHTML = '';
+    setProgress(2);
+    try{
+      await recordAndExport();
+    }catch(e){
+      setStatus('Export error: '+e.message,'warn');
+    }
+    recordBtn.disabled = false; previewBtn.disabled = false;
+  });
+
+  async function recordAndExport(){
+    const [outW,outH] = targetDims();
+    setStatus('Recording ho raha hai... canvas ko chhedna mat.');
+    // record at the CURRENT preview canvas resolution (smooth/reliable),
+    // ffmpeg will scale up/down to the chosen export resolution afterwards.
+    const stream = canvas.captureStream(30);
+    const ac = getAudioCtx();
+    if(ac.state==='suspended') await ac.resume();
+    const dest = ac.createMediaStreamDestination();
+    const src = ac.createBufferSource();
+    src.buffer = state.audioBuffer;
+    src.connect(dest);
+    src.connect(ac.destination); // also hear it while recording
+
+    const combined = new MediaStream([...stream.getVideoTracks(), ...dest.stream.getAudioTracks()]);
+
+    let mimeType = 'video/webm;codecs=vp9,opus';
+    if(!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'video/webm;codecs=vp8,opus';
+    if(!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'video/webm';
+
+    const recorder = new MediaRecorder(combined, {mimeType});
+    const chunks = [];
+    recorder.ondataavailable = e=>{ if(e.data.size>0) chunks.push(e.data); };
+
+    const stopped = new Promise(res=>{ recorder.onstop = res; });
+
+    recorder.start();
+    const startTime = ac.currentTime;
+    src.start();
+    if(animHandle) cancelAnimationFrame(animHandle);
+    animateFrame(
+      ()=> ac.currentTime-startTime,
+      ()=>{ recorder.stop(); }
+    );
+
+    // progress 0-60% during recording
+    const progInterval = setInterval(()=>{
+      const t = ac.currentTime-startTime;
+      setProgress(Math.min(58, (t/state.duration)*58));
+    }, 200);
+
+    await stopped;
+    clearInterval(progInterval);
+    setProgress(60);
+
+    const webmBlob = new Blob(chunks, {type:'video/webm'});
+
+    setStatus('Video ko MP4 mein convert kiya ja raha hai ('+outW+'x'+outH+')...');
+    try{
+      await ensureFFmpeg();
+    }catch(e){
+      setStatus('FFmpeg load nahi hua, WebM hi download karo.','warn');
+      offerDownload(webmBlob, 'toon-voice-studio.webm');
+      return;
+    }
+
+    const inputName = 'in.webm';
+    const outputName = 'out.mp4';
+    const { fetchFile } = window.FFmpegUtil;
+    await ffmpeg.writeFile(inputName, await fetchFile(webmBlob));
+
+    try{
+      await ffmpeg.exec([
+        '-i', inputName,
+        '-vf', `scale=${outW}:${outH}:flags=lanczos`,
+        '-c:v','libx264','-preset','veryfast','-crf','20',
+        '-c:a','aac','-b:a','160k',
+        '-pix_fmt','yuv420p',
+        outputName
+      ]);
+    }catch(e){
+      setStatus('MP4 conversion fail hui, WebM download karo.','warn');
+      offerDownload(webmBlob, 'toon-voice-studio.webm');
+      return;
+    }
+
+    const data = await ffmpeg.readFile(outputName);
+    const mp4Blob = new Blob([data.buffer], {type:'video/mp4'});
+    setProgress(100);
+    setStatus('Video ready hai! Download karo.','ok');
+    offerDownload(mp4Blob, 'toon-voice-studio.mp4');
+  }
+
+  function offerDownload(blob, filename){
+    const url = URL.createObjectURL(blob);
+    dlArea.innerHTML = '';
+    const a = document.createElement('a');
+    a.href = url; a.download = filename; a.className='dl';
+    a.textContent = '⬇ Download '+filename;
+    dlArea.appendChild(a);
+  }
+
+})();
+</script>
+</body>
+</html>
