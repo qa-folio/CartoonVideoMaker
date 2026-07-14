@@ -469,9 +469,9 @@
   async function ensureMeSpeak(){
     if(meSpeakReady) return;
     setStatus('Voice engine load ho raha hai...');
-    await loadScript(new URL('vendor/mespeak/ESpeak.js', location.href).href);
+    await loadScript(new URL('vendor/mespeak/mespeak.js', location.href).href);
     if(typeof window.meSpeak === 'undefined'){
-      throw new Error('meSpeak script loaded but window.meSpeak is not defined. Check vendor/mespeak/ESpeak.js was uploaded correctly.');
+      throw new Error('meSpeak script loaded but window.meSpeak is not defined. Check vendor/mespeak/mespeak.js was uploaded correctly.');
     }
     await new Promise((res,rej)=>{
       window.meSpeak.loadConfig(new URL('vendor/mespeak/mespeak_config.json', location.href).href);
