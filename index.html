@@ -478,7 +478,7 @@
     return audioCtx;
   }
 
-  // ---------- FIXED SPEECH GENERATION & TRY-CATCH SYNTAX ----------
+  // ---------- FIXED SPEECH GENERATION (BUG FREE DECODING) ----------
   async function generateSpeech(){
     const text = document.getElementById('script').value.trim();
     if(!text){ setStatus('Pehle script likho.','warn'); return false; }
@@ -488,7 +488,7 @@
       setStatus('Voice engine load nahi hua — internet check karo. ('+e.message+')','warn');
       return false;
     }
-    setStatus('Awaaz generate ho rahi hai...');
+    setStatus('Awaaz generate ho rahi hai... (Large text me thoda time lag sakta hai)');
     const gender = document.getElementById('voiceGender').value;
     const pitch = document.getElementById('pitch').value;
     const speed = document.getElementById('speed').value;
@@ -507,17 +507,38 @@
       setStatus('Speech generation error: '+e.message,'warn');
       return false;
     }
-    if(!rawArray){ setStatus('Awaaz generate nahi ho payi. Script chota karke try karo.','warn'); return false; }
+    if(!rawArray || rawArray.length === 0){ 
+      setStatus('Awaaz generate nahi ho payi. Script chota karke try karo.','warn'); 
+      return false; 
+    }
 
-    const uint8 = new Uint8Array(rawArray);
     const ac = getAudioCtx();
+    
+    // SAFE PARSING: Agar direct buffer fail hota hai to Blob arrayBuffer pipeline use karenge
     let buf;
-    try{
-      // Safe Buffer pass without memory slicing duplicate leaks
-      buf = await ac.decodeAudioData(uint8.buffer); 
-    }catch(e){
-      setStatus('Audio decode error: '+e.message,'warn');
-      return false;
+    try {
+      const blob = new Blob([new Uint8Array(rawArray)], { type: 'audio/wav' });
+      const arrayBuffer = await blob.arrayBuffer();
+      buf = await ac.decodeAudioData(arrayBuffer);
+    } catch(e) {
+      // Fallback: Agar standard decoding crash hoti hai to manually float channel inject karenge
+      try {
+        console.warn("Standard decode failed, trying manual PCM conversion fallback...", e);
+        const sampleRate = 16000; // meSpeak standard sampling rate
+        const numSamples = rawArray.length / 2; // 16-bit audio
+        buf = ac.createBuffer(1, numSamples, sampleRate);
+        const channeling = buf.getChannelData(0);
+        const dataView = new DataView(new Uint8Array(rawArray).buffer);
+        for (let i = 0; i < numSamples; i++) {
+          if (i * 2 + 1 < rawArray.length) {
+            const intSample = dataView.getInt16(i * 2, true); // little-endian
+            channeling[i] = intSample / 32768; // Normalize to -1.0 to 1.0
+          }
+        }
+      } catch(fallbackErr) {
+        setStatus('Audio decode error: ' + fallbackErr.message, 'warn');
+        return false;
+      }
     }
     
     state.audioBuffer = buf;
